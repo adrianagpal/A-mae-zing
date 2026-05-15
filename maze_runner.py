@@ -1,0 +1,137 @@
+from mazegen_perfect import in_bounds
+
+N: int = 0x1
+E: int = 0x2
+S: int = 0x4
+W: int = 0x8
+
+OPPOSITE:   dict[int, int]              = {N: S, S: N, E: W, W: E}
+DIR_DELTA:  dict[int, tuple[int, int]]  = {N: (-1, 0), E: (0, 1), S: (1, 0), W: (0, -1)}
+DIR_CHAR:   dict[int, str]              = {N: 'N', E: 'E', S: 'S', W: 'W'}
+DIRECTIONS: list[int]                   = [N, E, S, W]
+
+
+def has_passage(grid: list[list[int]], row: int, col: int, direction: int) -> bool:
+    return (grid[row][col] & direction) == 0
+
+
+def open_wall(grid: list[list[int]], row1: int, col1: int,
+              row2: int, col2: int, direction: int) -> None:
+    grid[row1][col1] &= ~direction
+    grid[row2][col2] &= ~OPPOSITE[direction]
+
+
+def solver(grid: list[list[int]], entry: tuple[int, int], exit_coord: tuple[int, int],) -> str | None:
+    start_row, start_col = entry
+    end_row, end_col     = exit_coord
+    if not in_bounds(grid, start_row, start_col) or not in_bounds(grid, end_row, end_col):
+        return None
+    prev: dict[tuple[int, int], tuple[int, int] | None] = {entry: None}
+    queue: list[tuple[int, int]] = [entry]
+    while queue:
+        row, col = queue.pop(0)
+        if (row, col) == exit_coord:
+            directions: list[str] = []
+            current: tuple[int, int] | None = exit_coord
+            while prev[current] is not None:
+                pr, pc = prev[current]
+                delta_row = current[0] - pr
+                delta_col = current[1] - pc
+                idx: int = 0
+                while idx < len(DIRECTIONS):
+                    wall_dir: int = DIRECTIONS[idx]
+                    if DIR_DELTA[wall_dir] == (delta_row, delta_col):
+                        directions.append(DIR_CHAR[wall_dir])
+                        break
+                    idx = idx + 1
+                current = (pr, pc)
+            directions.reverse()
+            return "".join(directions)
+        i: int = 0
+        while i < len(DIRECTIONS):
+            wall_dir = DIRECTIONS[i]
+            if has_passage(grid, row, col, wall_dir):
+                delta_row, delta_col = DIR_DELTA[wall_dir]
+                next_row, next_col   = row + delta_row, col + delta_col
+                if in_bounds(grid, next_row, next_col) and (next_row, next_col) not in prev:
+                    prev[(next_row, next_col)] = (row, col)
+                    queue.append((next_row, next_col))
+            i = i + 1
+    return None
+
+
+def open_loop(grid: list[list[int]], entry: tuple[int, int], exit_coord: tuple[int, int],) -> tuple[tuple[int, int], tuple[int, int]] | None:
+    dist_entry: dict[tuple[int, int], int] = {entry: 0}
+    dist_exit:  dict[tuple[int, int], int] = {exit_coord: 0}
+    queue_entry: list[tuple[int, int]] = [entry]
+    queue_exit:  list[tuple[int, int]] = [exit_coord]
+    while queue_entry or queue_exit:
+        if queue_entry:
+            row, col = queue_entry.pop(0)
+            i: int = 0
+            while i < len(DIRECTIONS):
+                wall_dir: int = DIRECTIONS[i]
+                delta_row, delta_col = DIR_DELTA[wall_dir]
+                next_row, next_col   = row + delta_row, col + delta_col
+                if in_bounds(grid, next_row, next_col):
+                    if not has_passage(grid, row, col, wall_dir):
+                        if (next_row, next_col) in dist_exit:
+                            open_wall(grid, row, col, next_row, next_col, wall_dir)
+                            return (row, col), (next_row, next_col)
+                    elif (next_row, next_col) not in dist_entry:
+                        dist_entry[(next_row, next_col)] = dist_entry[(row, col)] + 1
+                        queue_entry.append((next_row, next_col))
+                i = i + 1
+        if queue_exit:
+            row, col = queue_exit.pop(0)
+            i = 0
+            while i < len(DIRECTIONS):
+                wall_dir = DIRECTIONS[i]
+                delta_row, delta_col = DIR_DELTA[wall_dir]
+                next_row, next_col   = row + delta_row, col + delta_col
+                if in_bounds(grid, next_row, next_col):
+                    if not has_passage(grid, row, col, wall_dir):
+                        if (next_row, next_col) in dist_entry:
+                            open_wall(grid, row, col, next_row, next_col, wall_dir)
+                            return (row, col), (next_row, next_col)
+                    elif (next_row, next_col) not in dist_exit:
+                        dist_exit[(next_row, next_col)] = dist_exit[(row, col)] + 1
+                        queue_exit.append((next_row, next_col))
+                i = i + 1
+    return None
+
+
+def make_imperfect(grid: list[list[int]], entry: tuple[int, int], exit_coord: tuple[int, int],) -> tuple[str | None, tuple[tuple[int, int], tuple[int, int]] | None]:
+    loop_cells = open_loop(grid, entry, exit_coord)
+    solution   = solver(grid, entry, exit_coord)
+    return solution, loop_cells
+
+
+if __name__ == '__main__':
+    import numpy as np
+    from mazegen_pkg import MazeGenerator
+    from mazegen_perfect import fill, print_grid, MODIFIABLE, BARRIER
+
+    SIZE  = (25, 15)
+    SEED  = 0
+    ENTRY = (0, 0)
+    EXIT  = (22, 12)
+
+    maze_gen = MazeGenerator(SIZE, SEED)
+    mat = maze_gen.generate(ENTRY, EXIT)
+    mat = maze_gen.paint_42(mat)
+    grid = np.where(mat == 15, BARRIER, MODIFIABLE).tolist()
+    grid = fill(grid, ENTRY, EXIT, algorithm='algo1', seed=SEED)
+
+    print("=== Perfect maze ===")
+    print_grid(grid)
+    solution = solver(grid, ENTRY, EXIT)
+    print(f"Solution: {solution}")
+
+    print("\n=== Opening nontrivial loop ===")
+    solution, loop_cells = make_imperfect(grid, ENTRY, EXIT)
+    (row1, col1), (row2, col2) = loop_cells
+    print(f"Broken wall between {(row1, col1)} and {(row2, col2)}")
+    print_grid(grid)
+    print(f"Solution: {solution}")
+
