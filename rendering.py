@@ -127,9 +127,9 @@ def set_edges(grid: npt.NDArray):
 
             new_grid[idx_row - 1][idx_col - 1] = translate_byte(intersection)
 
-            print("Cell:", cell)
-            print("Diagonal", diagonal)
-            print("Intersection", intersection)
+            #print("Cell:", cell)
+            #print("Diagonal", diagonal)
+            #print("Intersection", intersection)
     
     return new_grid
 
@@ -151,7 +151,7 @@ def print_final_grid(grid: npt.NDArray) -> None:
 
 if __name__ == '__main__':
 
-    SIZE  = (8,9)
+    SIZE  = (20, 30)
     SEED  = 42
     ENTRY = (0, 0)
     EXIT  = (2, 3)
