@@ -3,7 +3,14 @@
 from mazegen_pkg import MazeGenerator
 from typing import Any
 import sys
+import numpy as np
+import mazegen_perfect
+from rendering import save_maze_to_txt, set_cross, set_edges, set_entry_exit
 
+
+#it is what we get from your mazegen, F are the 42
+MODIFIABLE: int = 0xF
+BARRIER:    int = 0xFF #edges and 42
 
 def open_file(config_file) -> list[str]:
     config: list[str] = []
@@ -56,7 +63,6 @@ def get_keys_dict(config) -> dict[str, Any]:
             except Exception as e:
                 print(e)
 
-    print(keys_dict)
     return keys_dict
 
 
@@ -84,7 +90,6 @@ def check_data_format(keys_dict):
             keys_dict[item] = int(keys_dict[item])
 
         elif item == 'PERFECT':
-            print(keys_dict[item].upper())
             if keys_dict[item].upper() == 'TRUE':
                 keys_dict[item] = True
             elif keys_dict[item].upper() == 'FALSE':
@@ -102,12 +107,11 @@ def check_data_format(keys_dict):
         elif item == 'ALGORITHM':
             if keys_dict[item] not in algo_list:
                 raise Exception("Unknown algorithm")
-
-    print("Dictionary succesfully registered")  
+ 
     return(keys_dict)
 
 
-def check_entry_exit(keys_dict):
+def check_entry_exit(keys_dict, mat):
     entry = keys_dict['ENTRY']
     exit_coord = keys_dict['EXIT']
     width = keys_dict['WIDTH']
@@ -115,16 +119,36 @@ def check_entry_exit(keys_dict):
 
     if entry == exit_coord:
         return False
-
+    
     if (
-        entry[0] > width or
-        exit_coord[0] > width or
-        entry[1] > height or
-        exit_coord[1] > height
+        entry[0] >= height or
+        exit_coord[0] >= height or
+        entry[1] >= width or
+        exit_coord[1] >= width
+    ):
+        return False
+    
+    if (
+        mat[entry[0]][entry[1]] == BARRIER or
+        mat[exit_coord[0]][exit_coord[1]] == BARRIER
     ):
         return False
 
     return True
+
+
+#just for testing
+def print_final_grid(grid: list[list[str]]) -> None:
+
+    height = len(grid)#this should come from the config directly later
+    width = len(grid[0])
+
+    for row in range(height):
+        line = ''
+        for col in range(width):
+            cell = grid[row][col]
+            line += str(cell)
+        print(line)
 
 
 def main() -> None:
@@ -147,12 +171,8 @@ def main() -> None:
         exit()
     try:
         keys_dict = check_data_format(keys_dict)
-        print(keys_dict)
     except Exception as e:
         print(e)
-
-    if not check_entry_exit(keys_dict):
-        print("Impossible maze parameters")
         exit()
 
     size = keys_dict['HEIGHT'], keys_dict['WIDTH']
@@ -162,22 +182,27 @@ def main() -> None:
 
     maze_gen = MazeGenerator(size, seed)
     mat = maze_gen.generate(entry, exit_coord)
-    print(maze_gen.paint_42(mat))
+    mat = maze_gen.paint_42(mat)
+    mat = np.where(mat == 15, BARRIER, MODIFIABLE)
+
+    if not check_entry_exit(keys_dict, mat):
+        print("Impossible maze parameters")
+        exit()
+
+    print('Kruskal (algo1)')
+    try:
+        kruskal_mat = mazegen_perfect.fill(mat, entry, exit_coord, algorithm='algo1', seed=seed)
+    except ValueError as e:
+        print(e)
+
+    save_maze_to_txt(kruskal_mat)
+    new_grid = set_edges(kruskal_mat)
+    new_mat = set_cross(kruskal_mat, new_grid)
+    new_mat = set_entry_exit(new_mat, entry, exit_coord, size)
+
+    print_final_grid(new_mat)
 
 
-#def convert_to_byte():
-
-def debug_nibble():
-    x = 14
-    new_nibble = swap_nibbles(x)
-
-    print(new_nibble)
-    print(new_nibble >> 0 & 1)
-    print(new_nibble >> 1 & 1)
-    print(new_nibble >> 2 & 1)
-    print(new_nibble >> 3 & 1)
 
 if __name__ == "__main__":
     main()
-
-# Put random hex numbers taking into account the restrictions of the corresponding bit.

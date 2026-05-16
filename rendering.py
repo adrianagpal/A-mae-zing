@@ -2,6 +2,7 @@ import numpy as np
 import numpy.typing as npt
 from mazegen_pkg import MazeGenerator
 import mazegen_perfect
+from rgb_text import rgb_text
 
 
 #it is what we get from your mazegen, F are the 42
@@ -45,7 +46,7 @@ def byte_intersection(cell, diagonal, left, up):
     return byte
 
 
-def get_cell_matrix(grid: npt.NDArray, new_grid: npt.NDArray):
+def set_cross(grid: npt.NDArray, new_grid: npt.NDArray):
 
     height, width = grid.shape
 
@@ -76,7 +77,7 @@ def get_cell_matrix(grid: npt.NDArray, new_grid: npt.NDArray):
     return new_grid
 
 
-def translate_byte(intersection):
+def translate_byte(intersection) -> str:
 
     dict_char = {
         0: ' ',
@@ -101,8 +102,31 @@ def translate_byte(intersection):
         NORTH | SOUTH | EAST | WEST: '╬',
     }
 
-    return dict_char[intersection]
+    try:
+        return dict_char[intersection]
+    except KeyError:
+        return dict_char[0]
 
+
+def set_entry_exit(grid: npt.NDArray, entry, exit, size):
+
+    rows = size[0] * 2 + 1
+    cols = size[1] * 2 + 1
+
+    coord1_entry, coord2_entry = entry[0] * 2 + 1, entry[1] * 2 + 1
+    coord1_exit, coord2_exit = exit[0] * 2 + 1, exit[1] * 2 + 1
+
+    new_grid: list[list[str]] = []
+
+    for idx_row in range(rows):
+        row: list[str] = []
+        for idx_col in range(cols):
+            row.append(grid[idx_row][idx_col])
+        new_grid.append(row)
+
+    new_grid[coord1_entry][coord2_entry] = rgb_text('█', 255, 0, 0)
+    new_grid[coord1_exit][coord2_exit] = rgb_text('█', 0, 255, 0)
+    return new_grid
 
 
 def set_edges(grid: npt.NDArray):
@@ -135,9 +159,10 @@ def set_edges(grid: npt.NDArray):
 
 
 #just for testing
-def print_final_grid(grid: npt.NDArray) -> None:
+def print_final_grid(grid: list[list[str]]) -> None:
 
-    height, width = grid.shape
+    height = len(grid)#this should come from the config directly later
+    width = len(grid[0])
 
     for row in range(height):
         line = ''
@@ -147,14 +172,26 @@ def print_final_grid(grid: npt.NDArray) -> None:
         print(line)
 
 
+def save_maze_to_txt(grid: npt.NDArray):
+
+    height, width = grid.shape
+
+    for row in range(height):
+        line = ''
+        for col in range(width):
+            cell = grid[row][col]
+            line += f'{cell:X}'  
+
+        with open("maze.txt", "a") as maze:
+            maze.write(line + '\n')
 
 
 if __name__ == '__main__':
 
-    SIZE  = (20, 30)
+    SIZE  = (10, 15)
     SEED  = 42
-    ENTRY = (0, 0)
-    EXIT  = (2, 3)
+    ENTRY = (1, 1)
+    EXIT  = (8, 5)
 
     maze_gen = MazeGenerator(SIZE, SEED)
     mat = maze_gen.generate(ENTRY, EXIT)
@@ -167,8 +204,10 @@ if __name__ == '__main__':
     except ValueError as e:
         print(e)
 
-    print(kruskal_mat)
+    save_maze_to_txt(kruskal_mat)
     new_grid = set_edges(kruskal_mat)
-    new_mat = get_cell_matrix(kruskal_mat, new_grid)
+    new_mat = set_cross(kruskal_mat, new_grid)
+    new_mat = set_entry_exit(new_mat, ENTRY, EXIT, SIZE)
 
     print_final_grid(new_mat)
+
