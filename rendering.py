@@ -3,7 +3,8 @@ import numpy.typing as npt
 from mazegen_pkg import MazeGenerator
 import mazegen_perfect
 from rgb_text import rgb_text
-
+import sys
+import time
 
 #it is what we get from your mazegen, F are the 42
 MODIFIABLE: int = 0xF
@@ -19,6 +20,8 @@ NORTH: int = 0x1
 EAST: int = 0x2
 SOUTH: int = 0x4
 WEST: int = 0x8
+
+WALL_BITS: list[int] = [NORTH, EAST, SOUTH, WEST]
 
 # No basta solo con mirar la diagonal, hay que mirar la izquierda y la de arriba
 def byte_intersection(cell, diagonal, left, up):
@@ -185,6 +188,47 @@ def save_maze_to_txt(grid: npt.NDArray):
         with open("maze.txt", "a") as maze:
             maze.write(line + '\n')
 
+def render( anim_grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], size: tuple[int, int],) -> None:
+    rendered = set_edges(anim_grid)
+    rendered = set_cross(anim_grid, rendered)
+    rendered = set_entry_exit(rendered, entry, exit_coord, size)
+    sys.stdout.write('\033[H\033[2J\033[3J')
+    sys.stdout.flush()
+    print_final_grid(rendered)
+
+
+def animate_build( grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], size: tuple[int, int], delay: float = 0.05,) -> None:
+
+    height, width = grid.shape
+    anim_grid = np.full((height, width), MODIFIABLE, dtype=int)
+
+    row: int = 0
+    while row < height:
+        col: int = 0
+        while col < width:
+            if grid[row][col] == BARRIER:
+                anim_grid[row][col] = BARRIER
+            col = col + 1
+        row = row + 1
+    render(anim_grid, entry, exit_coord, size)
+    time.sleep(delay)
+
+    row = 0
+    while row < height:
+        col = 0
+        while col < width:
+            target = int(grid[row][col])
+            if target != BARRIER:
+                bit_idx: int = 0
+                while bit_idx < len(WALL_BITS):
+                    wall_bit = WALL_BITS[bit_idx]
+                    if not (target & wall_bit) and (anim_grid[row][col] & wall_bit):
+                        anim_grid[row][col] &= ~wall_bit
+                        render(anim_grid, entry, exit_coord, size)
+                        time.sleep(delay)
+                    bit_idx = bit_idx + 1
+            col = col + 1
+        row = row + 1
 
 if __name__ == '__main__':
 
@@ -193,6 +237,7 @@ if __name__ == '__main__':
     ENTRY = (1, 1)
     EXIT  = (8, 5)
 
+	#generation
     maze_gen = MazeGenerator(SIZE, SEED)
     mat = maze_gen.generate(ENTRY, EXIT)
     mat = maze_gen.paint_42(mat)
@@ -204,10 +249,13 @@ if __name__ == '__main__':
     except ValueError as e:
         print(e)
 
+    animate_build(kruskal_mat, ENTRY, EXIT, SIZE, delay=0.07)
+
+	#internal
     save_maze_to_txt(kruskal_mat)
     new_grid = set_edges(kruskal_mat)
     new_mat = set_cross(kruskal_mat, new_grid)
     new_mat = set_entry_exit(new_mat, ENTRY, EXIT, SIZE)
-
-    print_final_grid(new_mat)
+	#printing
+    #print_final_grid(new_mat)
 
