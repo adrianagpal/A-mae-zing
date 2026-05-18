@@ -5,6 +5,7 @@ import sys
 from typing import TypeAlias
 from .high_definitions import WALL_CHARS, NORTH, SOUTH, EAST, WEST
 from .rgb_text import rgb_text
+from .maze_runner import solver
 
 
 def colourise_grid(grid: list[list[str]], colours) -> list[list[str]]:
@@ -151,19 +152,27 @@ def set_edges(grid: npt.NDArray):
     return new_grid
 
 
-def save_maze_to_txt(grid: npt.NDArray):
+def save_maze_to_txt(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], filename: str):
 
     height, width = grid.shape
+    content: str = ""
 
     for row in range(height):
         line = ''
         for col in range(width):
-            cell = grid[row][col]
-            line += f'{cell:X}'  
+            cell = 'F' if grid[row][col] == 0xFF else f'{grid[row][col]:X}'
+            line += cell
 
-        with open("maze.txt", "a") as maze:
-            maze.write(line + '\n')
+        content += line + '\n' 
 
+    with open(filename, "w") as maze:
+        maze.write(content)
+        maze.write('\n')
+        maze.write(",".join([str(entry[0]), str(entry[1])]))
+        maze.write('\n')
+        maze.write(",".join([str(exit_coord[0]), str(exit_coord[1])]))
+        maze.write('\n')
+        maze.write(solver(grid, entry, exit_coord))
 
 def _build_ber_grid(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], c_chance: float = 0.05,) -> list[list[str]]:
     rendered = set_edges(grid)

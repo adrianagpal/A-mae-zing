@@ -11,41 +11,38 @@ from .animations import animate_build, animate_solution
 
 class MazeGenerator():
     def __init__(self):
-        self.size: tuple[int, int]
-        self.seed: int = 42
-        self.entry: tuple[int, int]
-        self.exit_coord: tuple[int, int]
-        self.algo: str
-        self.perfect: bool
-        self.colours = self.MazeColours
+
+        keys_dict = self.check_parameters()
+
+        if bool(keys_dict):
+            self.size: tuple[int, int] = keys_dict['HEIGHT'], keys_dict['WIDTH']
+            self.seed: int = keys_dict['SEED']
+            self.entry: tuple[int, int] = keys_dict['ENTRY']
+            self.exit_coord: tuple[int, int] = keys_dict['EXIT']
+            self.algo: str = keys_dict['ALGORITHM'].lower()
+            self.perfect: bool = keys_dict['PERFECT']
+            self.output: str = keys_dict['OUTPUT_FILE']
+            self.colours = self.MazeColours
     
     def generate_maze(self):
 
         keys_dict = self.check_parameters()
 
-        if bool(keys_dict):
-            self.size = keys_dict['HEIGHT'], keys_dict['WIDTH']
-            self.seed = keys_dict['SEED']
-            self.entry = keys_dict['ENTRY']
-            self.exit_coord = keys_dict['EXIT']
-            self.algo = keys_dict['ALGORITHM'].lower()
-            self.perfect = keys_dict['PERFECT']
+        base = self.generate_base()
 
-            base = self.generate_base()
+        if not check_entry_exit(keys_dict, base):
+            print("Impossible maze parameters")
+            exit()
 
-            if not check_entry_exit(keys_dict, base):
-                print("Impossible maze parameters")
-                exit()
-
-            try:
-                maze = fill(base, self.entry, algorithm=self.algo, seed=self.seed)
-            except ValueError as e:
-                print(e)
+        try:
+            maze = fill(base, self.entry, algorithm=self.algo, seed=self.seed)
+        except ValueError as e:
+            print(e)
             
-            if not self.perfect:
-                maze = make_imperfect(maze, self.entry, self.exit_coord)
+        if not self.perfect:
+            maze = make_imperfect(maze, self.entry, self.exit_coord)
 
-            return maze
+        return maze
 
     def generate_base(self):
         np.random.seed(self.seed)

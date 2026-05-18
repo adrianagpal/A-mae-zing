@@ -1,5 +1,4 @@
 import random
-import numpy as np
 from .high_definitions import MODIFIABLE, BARRIER, N, S, E, W, OPPOSITE, DIR_DELTA, DIRECTIONS
 
 
