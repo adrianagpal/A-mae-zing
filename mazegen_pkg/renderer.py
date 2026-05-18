@@ -1,60 +1,13 @@
 import numpy as np
 import numpy.typing as npt
-from mazegen_pkg import MazeGenerator
-import mazegen_perfect
-from rgb_text import rgb_text, get_rgb_value
 import random
 import sys
-import time
-
-#it is what we get from your mazegen, F are the 42
-MODIFIABLE: int = 0xF
-BARRIER:    int = 0xFF #edges and 42
+from typing import TypeAlias
+from .high_definitions import WALL_CHARS, NORTH, SOUTH, EAST, WEST
+from .rgb_text import rgb_text
 
 
-#   Bit 0 → N (0x1)   North wall
-#   Bit 1 → E (0x2)   East  wall
-#   Bit 2 → S (0x4)   South wall
-#   Bit 3 → W (0x8)   West  wall
-
-NORTH: int = 0x1
-EAST: int = 0x2
-SOUTH: int = 0x4
-WEST: int = 0x8
-
-WALL_BITS: list[int] = [NORTH, EAST, SOUTH, WEST]
-
-WALL_CHARS: set[str] = {'═', '║', '╚', '╝', '╔', '╗', '╠', '╣', '╩', '╦', '╬'}
-
-CHAR_DELTA: dict[str, tuple[int, int]] = {
-    'N': (-1, 0), 'E': (0, 1), 'S': (1, 0), 'W': (0, -1),
-}
-
-SOLUTION_COLOUR: str = rgb_text('█', 255, 255, 0)
-
-
-class MazeColours:
-    def __init__(self, wall_r: int = 255, wall_g: int = 255, wall_b: int = 255, barrier_r: int = 128, barrier_g: int = 128, barrier_b: int = 128,) -> None:
-        self.wall_r    = wall_r
-        self.wall_g    = wall_g
-        self.wall_b    = wall_b
-        self.barrier_r = barrier_r
-        self.barrier_g = barrier_g
-        self.barrier_b = barrier_b
-
-
-def ask_colours(colours: MazeColours) -> None:
-    print("Wall colour:")
-    colours.wall_r = get_rgb_value("red")
-    colours.wall_g = get_rgb_value("green")
-    colours.wall_b = get_rgb_value("blue")
-    print("Barrier colour:")
-    colours.barrier_r = get_rgb_value("red")
-    colours.barrier_g = get_rgb_value("green")
-    colours.barrier_b = get_rgb_value("blue")
-
-
-def colourise_grid(grid: list[list[str]], colours: MazeColours) -> list[list[str]]:
+def colourise_grid(grid: list[list[str]], colours) -> list[list[str]]:
     row_idx: int = 0
     while row_idx < len(grid):
         col_idx: int = 0
@@ -117,10 +70,6 @@ def set_cross(grid: npt.NDArray, new_grid: npt.NDArray):
                       
             if cell == 255:
                 new_grid[idx_row][idx_col] = '█'
-
-            #print("Cell", cell)
-            #print("Diagonal", grid[i-1][j-1])
-            #print("Intersection", byte_intersection(cell, grid[i-1][j-1]))
        
     return new_grid
 
@@ -198,26 +147,8 @@ def set_edges(grid: npt.NDArray):
             intersection = byte_intersection(cell, diagonal, left, up)
 
             new_grid[idx_row - 1][idx_col - 1] = translate_byte(intersection)
-
-            #print("Cell:", cell)
-            #print("Diagonal", diagonal)
-            #print("Intersection", intersection)
     
     return new_grid
-
-
-#just for testing
-def print_final_grid(grid: list[list[str]]) -> None:
-
-    height = len(grid)#this should come from the config directly later
-    width = len(grid[0])
-
-    for row in range(height):
-        line = ''
-        for col in range(width):
-            cell = grid[row][col]
-            line += str(cell)
-        print(line)
 
 
 def save_maze_to_txt(grid: npt.NDArray):
@@ -232,27 +163,6 @@ def save_maze_to_txt(grid: npt.NDArray):
 
         with open("maze.txt", "a") as maze:
             maze.write(line + '\n')
-
-def animate_solution(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], size: tuple[int, int], solution: str, delay: float = 0.05, colours: MazeColours | None = None,) -> None:
-    rendered = set_edges(grid)
-    rendered = set_cross(grid, rendered)
-    rendered = set_entry_exit(rendered, entry, exit_coord, size)
-    if colours is not None:
-        rendered = colourise_grid(rendered, colours)
-
-    row, col = entry
-    idx: int = 0
-    while idx < len(solution):
-        delta_row, delta_col = CHAR_DELTA[solution[idx]]
-        row += delta_row
-        col += delta_col
-        if (row, col) != exit_coord:
-            rendered[row * 2 + 1][col * 2 + 1] = SOLUTION_COLOUR
-        sys.stdout.write('\033[H\033[2J\033[3J')
-        sys.stdout.flush()
-        print_final_grid(rendered)
-        time.sleep(delay)
-        idx += 1
 
 
 def _build_ber_grid(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], c_chance: float = 0.05,) -> list[list[str]]:
@@ -313,7 +223,20 @@ def save_ber(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, i
             row_idx += 1
 
 
-def render( anim_grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], size: tuple[int, int], colours: MazeColours | None = None,) -> None:
+#just for testing
+def print_final_grid(grid: list[list[str]]) -> None:
+
+    height = len(grid)#this should come from the config directly later
+    width = len(grid[0])
+
+    for row in range(height):
+        line = ''
+        for col in range(width):
+            cell = grid[row][col]
+            line += str(cell)
+        print(line)
+
+def render(anim_grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], size: tuple[int, int], colours = None,) -> None:
     rendered = set_edges(anim_grid)
     rendered = set_cross(anim_grid, rendered)
     rendered = set_entry_exit(rendered, entry, exit_coord, size)
@@ -322,67 +245,3 @@ def render( anim_grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[in
     sys.stdout.write('\033[H\033[2J\033[3J')
     sys.stdout.flush()
     print_final_grid(rendered)
-
-
-def animate_build( grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], size: tuple[int, int], delay: float = 0.05, colours: MazeColours | None = None,) -> None:
-
-    height, width = grid.shape
-    anim_grid = np.full((height, width), MODIFIABLE, dtype=int)
-
-    row: int = 0
-    while row < height:
-        col: int = 0
-        while col < width:
-            if grid[row][col] == BARRIER:
-                anim_grid[row][col] = BARRIER
-            col = col + 1
-        row = row + 1
-    render(anim_grid, entry, exit_coord, size, colours)
-    time.sleep(delay)
-
-    row = 0
-    while row < height:
-        col = 0
-        while col < width:
-            target = int(grid[row][col])
-            if target != BARRIER:
-                bit_idx: int = 0
-                while bit_idx < len(WALL_BITS):
-                    wall_bit = WALL_BITS[bit_idx]
-                    if not (target & wall_bit) and (anim_grid[row][col] & wall_bit):
-                        anim_grid[row][col] &= ~wall_bit
-                        render(anim_grid, entry, exit_coord, size, colours)
-                        time.sleep(delay)
-                    bit_idx = bit_idx + 1
-            col = col + 1
-        row = row + 1
-
-if __name__ == '__main__':
-
-    SIZE  = (10, 15)
-    SEED  = 42
-    ENTRY = (1, 1)
-    EXIT  = (8, 5)
-
-	#generation
-    maze_gen = MazeGenerator(SIZE, SEED)
-    mat = maze_gen.generate(ENTRY, EXIT)
-    mat = maze_gen.paint_42(mat)
-    mat = np.where(mat == 15, BARRIER, MODIFIABLE)
-
-    print('Kruskal (algo1)')
-    try:
-        kruskal_mat = mazegen_perfect.fill(mat, ENTRY, EXIT, algorithm='algo1', seed=SEED)
-    except ValueError as e:
-        print(e)
-
-    animate_build(kruskal_mat, ENTRY, EXIT, SIZE, delay=0.07)
-
-	#internal
-    save_maze_to_txt(kruskal_mat)
-    new_grid = set_edges(kruskal_mat)
-    new_mat = set_cross(kruskal_mat, new_grid)
-    new_mat = set_entry_exit(new_mat, ENTRY, EXIT, SIZE)
-	#printing
-    #print_final_grid(new_mat)
-

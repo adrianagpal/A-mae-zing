@@ -1,26 +1,7 @@
 import random
-from mazegen_pkg import MazeGenerator
 import numpy as np
-from letter_to_lines import get_cell_matrix
+from .high_definitions import MODIFIABLE, BARRIER, N, S, E, W, OPPOSITE, DIR_DELTA, DIRECTIONS
 
-#   Bit 0 → N (0x1)   North wall
-#   Bit 1 → E (0x2)   East  wall
-#   Bit 2 → S (0x4)   South wall
-#   Bit 3 → W (0x8)   West  wall
-
-N: int = 0x1
-E: int = 0x2
-S: int = 0x4
-W: int = 0x8
-
-#it is what we get from your mazegen, F are the 42
-MODIFIABLE: int = 0xF
-BARRIER:    int = 0xFF #edges and 42
-
-#opposi
-OPPOSITE: dict[int, int] = {N: S, S: N, E: W, W: E}
-DIR_DELTA: dict[int, tuple[int, int]] = {N: (-1, 0), E: (0, 1), S: (1, 0), W: (0, -1)}
-DIRECTIONS: list[int] = [N, E, S, W]
 
 def in_bounds(grid: list[list[int]], r: int, c: int) -> bool:
     return 0 <= r < len(grid) and 0 <= c < len(grid[0])
@@ -29,6 +10,7 @@ def in_bounds(grid: list[list[int]], r: int, c: int) -> bool:
 def is_modifiable(grid: list[list[int]], r: int, c: int) -> bool:
     return grid[r][c] == MODIFIABLE
 
+
 #destroys a wall between cells, carving it
 def carve(grid: list[list[int]], r1: int, c1: int, r2: int, c2: int, direction: int,) -> bool:
     if grid[r1][c1] == BARRIER or grid[r2][c2] == BARRIER:
@@ -36,6 +18,7 @@ def carve(grid: list[list[int]], r1: int, c1: int, r2: int, c2: int, direction: 
     grid[r1][c1] &= ~direction
     grid[r2][c2] &= ~OPPOSITE[direction]
     return True
+
 
 #set up for kruskal
 def collect_edges(grid: list[list[int]]) -> list[tuple[int, int, int]]:
@@ -52,6 +35,7 @@ def collect_edges(grid: list[list[int]]) -> list[tuple[int, int, int]]:
             c = c + 1
         r = r + 1
     return edges
+
 
 #set up for prim
 def get_modifiable_neighbors(
@@ -71,6 +55,7 @@ def get_modifiable_neighbors(
 
 def cell_index(grid: list[list[int]], r: int, c: int) -> int:
     return r * len(grid[0]) + c
+
 
 #union find, a list of 'structures' that will later join
 def make_uf(n: int) -> list[int]:
@@ -141,7 +126,8 @@ def prim(grid: list[list[int]], start_r: int, start_c: int) -> list[list[int]]:
         push_frontiers(to_r, to_c)
 
     return grid
-    
+
+
 def seal_isolated_pockets(grid: list[list[int]],entry: tuple[int, int],) -> None:
     reachable: set[tuple[int, int]] = {entry}
     queue: list[tuple[int, int]] = [entry]
@@ -173,55 +159,14 @@ def seal_isolated_pockets(grid: list[list[int]],entry: tuple[int, int],) -> None
         r += 1
 
 
-def fill(mat,entry: tuple[int, int],exit_coord: tuple[int, int],algorithm: str = 'algo1', seed: int = 42,) -> list[list[int]]:
+def fill(mat, entry: tuple[int, int], algorithm: str, seed: int = 42,) -> list[list[int]]:
     random.seed(seed)
     grid = mat
     seal_isolated_pockets(grid, entry)
 
-    if algorithm == 'algo1': #this will aslo come from the config
+    if algorithm == 'kruskal': #this will aslo come from the config
         return kruskal(grid)
-    elif algorithm == 'algo2':
+    elif algorithm == 'prim':
         return prim(grid, entry[0], entry[1])
     else:
         raise ValueError(f"Unknown algorithm: {algorithm}")
-
-
-#just for testing
-def print_grid(grid: list[list[int]], label: str = '') -> None:
-    if label:
-        print(f"\n{label}")
-        print('-' * (len(grid[0]) * 3))
-    r = 0
-    while r < len(grid):
-        c = 0
-        cells = []
-        while c < len(grid[r]):
-            cells.append('##' if grid[r][c] == BARRIER else f'{grid[r][c]:X}')
-            c += 1
-        print(' '.join(cells))
-        r += 1
-
-if __name__ == '__main__':
-
-    SIZE  = (25, 15)
-    SEED  = 42
-    ENTRY = (0, 0)
-    EXIT  = (2, 3)
-
-    maze_gen = MazeGenerator(SIZE, SEED)
-    mat = maze_gen.generate(ENTRY, EXIT)
-    mat = maze_gen.paint_42(mat)
-    mat = np.where(mat == 15, BARRIER, MODIFIABLE)
-
-    print('Kruskal (algo1)')
-    try:
-        new_mat = fill(mat, ENTRY, EXIT, algorithm='algo1', seed=SEED)
-    except ValueError as e:
-        print(e)
-
-    print_grid(new_mat)
-    print(np.vectorize(get_cell_matrix)(new_mat))
-
-
-    print('\nPrim (algo2)')
-    print_grid(fill(mat, ENTRY, EXIT, algorithm='algo2', seed=SEED))

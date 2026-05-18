@@ -1,23 +1,86 @@
 import numpy as np
-import random
-#import matplotlib.pyplot as plt
+import sys
+from .parsing import open_file, get_keys_dict, check_data_format, check_entry_exit
+from .generator import fill
+from .rgb_text import get_rgb_value
+from .maze_runner import make_imperfect, solver
+from .high_definitions import MODIFIABLE, BARRIER
+from .renderer import render
+from .animations import animate_build, animate_solution
+
 
 class MazeGenerator():
-    def __init__(self, size: tuple[int, int], seed: int = 42):
-        self.size = size
-        self.seed = seed
+    def __init__(self):
+        self.size: tuple[int, int]
+        self.seed: int = 42
+        self.entry: tuple[int, int]
+        self.exit_coord: tuple[int, int]
+        self.algo: str
+        self.perfect: bool
+        self.colours = self.MazeColours
+    
+    def generate_maze(self):
 
-    def generate(self, entry, exit_coord):
+        keys_dict = self.check_parameters()
+
+        if bool(keys_dict):
+            self.size = keys_dict['HEIGHT'], keys_dict['WIDTH']
+            self.seed = keys_dict['SEED']
+            self.entry = keys_dict['ENTRY']
+            self.exit_coord = keys_dict['EXIT']
+            self.algo = keys_dict['ALGORITHM'].lower()
+            self.perfect = keys_dict['PERFECT']
+
+            base = self.generate_base()
+
+            if not check_entry_exit(keys_dict, base):
+                print("Impossible maze parameters")
+                exit()
+
+            try:
+                maze = fill(base, self.entry, algorithm=self.algo, seed=self.seed)
+            except ValueError as e:
+                print(e)
+            
+            if not self.perfect:
+                maze = make_imperfect(maze, self.entry, self.exit_coord)
+
+            return maze
+
+    def generate_base(self):
         np.random.seed(self.seed)
-
-        # Creates a matrix of zeros
         mat = np.zeros(self.size, dtype=int)
-        #mat[entry[0], entry[1]] = 16
-        #mat[exit_coord[0], exit_coord[1]] = 17
-        
-        pad_mat = np.pad(mat, pad_width=1, mode='constant', constant_values=15)
+        self.paint_42(mat)
+        mat = np.where(mat == 15, BARRIER, MODIFIABLE)
 
         return mat
+  
+    def check_parameters(self):
+        args = sys.argv[1:]
+        
+        if len(args) != 1:
+            print("Incorrect number of arguments provided")
+            exit()
+
+        config_file = sys.argv[1]
+        config = open_file(config_file) 
+
+        if not config:
+            exit()
+            
+        keys_dict = get_keys_dict(config)
+
+        if not bool(keys_dict):
+            print("Invalid format")
+            exit()
+        try:
+            keys_dict = check_data_format(keys_dict)
+        except Exception as e:
+            print(e)
+            exit()
+        
+        return keys_dict
+
     
     def paint_42(self, mat):
 
@@ -44,7 +107,35 @@ class MazeGenerator():
                 mat[y + n_blocks + j - 1][x + n_blocks + space] = 15
                 mat[y + 2 * n_blocks - 2][x + n_blocks + space + j] = 15       
 
-        #plt.imshow(mat, cmap='viridis', vmin=1, vmax=10)
-        #plt.show()  
-
         return mat
+    
+    def maze_renderer(self, maze, colours):
+        render(maze, self.entry, self.exit_coord, self.size, colours)
+
+    def maze_animate(self, maze, colours):
+        animate_build(maze, self.entry, self.exit_coord, self.size, 0.02, colours)
+
+    def maze_solve(self, maze, colours):
+        solution = solver(maze, self.entry, self.exit_coord)
+        animate_solution(maze, self.entry, self.exit_coord, self.size, solution, 0.02, colours)
+
+ 
+    class MazeColours:
+        def __init__(self, wall_r: int = 255, wall_g: int = 255, wall_b: int = 255,
+                     barrier_r: int = 128, barrier_g: int = 128, barrier_b: int = 128,) -> None:
+            self.wall_r    = wall_r
+            self.wall_g    = wall_g
+            self.wall_b    = wall_b
+            self.barrier_r = barrier_r
+            self.barrier_g = barrier_g
+            self.barrier_b = barrier_b
+
+        def ask_colours(self) -> None:
+            print("Wall colour:")
+            self.wall_r = get_rgb_value("red")
+            self.wall_g = get_rgb_value("green")
+            self.wall_b = get_rgb_value("blue")
+            print("Barrier colour:")
+            self.barrier_r = get_rgb_value("red")
+            self.barrier_g = get_rgb_value("green")
+            self.barrier_b = get_rgb_value("blue")

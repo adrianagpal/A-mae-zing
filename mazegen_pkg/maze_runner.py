@@ -1,14 +1,5 @@
-from mazegen_perfect import in_bounds
-
-N: int = 0x1
-E: int = 0x2
-S: int = 0x4
-W: int = 0x8
-
-OPPOSITE:   dict[int, int]              = {N: S, S: N, E: W, W: E}
-DIR_DELTA:  dict[int, tuple[int, int]]  = {N: (-1, 0), E: (0, 1), S: (1, 0), W: (0, -1)}
-DIR_CHAR:   dict[int, str]              = {N: 'N', E: 'E', S: 'S', W: 'W'}
-DIRECTIONS: list[int]                   = [N, E, S, W]
+from .generator import in_bounds
+from .high_definitions import OPPOSITE, DIR_DELTA, DIR_CHAR, DIRECTIONS
 
 
 def has_passage(grid: list[list[int]], row: int, col: int, direction: int) -> bool:
@@ -101,37 +92,7 @@ def open_loop(grid: list[list[int]], entry: tuple[int, int], exit_coord: tuple[i
     return None
 
 
-def make_imperfect(grid: list[list[int]], entry: tuple[int, int], exit_coord: tuple[int, int],) -> tuple[str | None, tuple[tuple[int, int], tuple[int, int]] | None]:
-    loop_cells = open_loop(grid, entry, exit_coord)
-    solution   = solver(grid, entry, exit_coord)
-    return solution, loop_cells
-
-
-if __name__ == '__main__':
-    import numpy as np
-    from mazegen_pkg import MazeGenerator
-    from mazegen_perfect import fill, print_grid, MODIFIABLE, BARRIER
-
-    SIZE  = (25, 15)
-    SEED  = 0
-    ENTRY = (0, 0)
-    EXIT  = (22, 12)
-
-    maze_gen = MazeGenerator(SIZE, SEED)
-    mat = maze_gen.generate(ENTRY, EXIT)
-    mat = maze_gen.paint_42(mat)
-    grid = np.where(mat == 15, BARRIER, MODIFIABLE).tolist()
-    grid = fill(grid, ENTRY, EXIT, algorithm='algo1', seed=SEED)
-
-    print("=== Perfect maze ===")
-    print_grid(grid)
-    solution = solver(grid, ENTRY, EXIT)
-    print(f"Solution: {solution}")
-
-    print("\n=== Opening nontrivial loop ===")
-    solution, loop_cells = make_imperfect(grid, ENTRY, EXIT)
-    (row1, col1), (row2, col2) = loop_cells
-    print(f"Broken wall between {(row1, col1)} and {(row2, col2)}")
-    print_grid(grid)
-    print(f"Solution: {solution}")
-
+def make_imperfect(grid: list[list[int]], entry: tuple[int, int], exit_coord: tuple[int, int],) -> str:
+    open_loop(grid, entry, exit_coord)
+    solution = solver(grid, entry, exit_coord)
+    return solution
