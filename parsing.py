@@ -4,8 +4,10 @@ from mazegen_pkg import MazeGenerator
 from typing import Any
 import sys
 import numpy as np
+import numpy.typing as npt
 import mazegen_perfect
-from rendering import save_maze_to_txt, set_cross, set_edges, set_entry_exit
+from rendering import save_maze_to_txt, set_cross, set_edges, set_entry_exit, animate_build, animate_solution, MazeColours, ask_colours
+from maze_runner import solver
 
 
 #it is what we get from your mazegen, F are the 42
@@ -23,10 +25,6 @@ def open_file(config_file) -> list[str]:
     return config
 
 
-"""
-Checks if all required keys are provided in the config file
-and there are no duplicates, or extra keys
-"""
 def check_keys(config) -> bool:
 
     keys: list[str] = []
@@ -66,9 +64,6 @@ def get_keys_dict(config) -> dict[str, Any]:
     return keys_dict
 
 
-"""
-Check valid coordinates without spaces
-"""
 def parse_coordinate(s: str) -> tuple[int, int] | None:
     parts = s.split(',')
 
@@ -151,7 +146,109 @@ def print_final_grid(grid: list[list[str]]) -> None:
         print(line)
 
 
-def main() -> None:
+def animate_from_config(config_file: str, colours: MazeColours) -> None:
+    config = open_file(config_file)
+    if not config:
+        return
+
+    keys_dict = get_keys_dict(config)
+    if not bool(keys_dict):
+        print("Invalid format")
+        return
+
+    try:
+        keys_dict = check_data_format(keys_dict)
+    except Exception as e:
+        print(e)
+        return
+
+    size       = keys_dict['HEIGHT'], keys_dict['WIDTH']
+    seed       = keys_dict['SEED']
+    entry      = keys_dict['ENTRY']
+    exit_coord = keys_dict['EXIT']
+
+    maze_gen = MazeGenerator(size, seed)
+    mat = maze_gen.generate(entry, exit_coord)
+    mat = maze_gen.paint_42(mat)
+    mat = np.where(mat == 15, BARRIER, MODIFIABLE)
+
+    if not check_entry_exit(keys_dict, mat):
+        print("Impossible maze parameters")
+        return
+
+    try:
+        kruskal_mat = mazegen_perfect.fill(mat, entry, exit_coord, algorithm=keys_dict['ALGORITHM'], seed=seed)
+    except ValueError as e:
+        print(e)
+        return
+
+    animate_build(kruskal_mat, entry, exit_coord, size, colours=colours)
+
+    solution = solver(kruskal_mat.tolist(), entry, exit_coord)
+    if solution:
+        animate_solution(kruskal_mat, entry, exit_coord, size, solution, colours=colours)
+
+
+def _setup_maze(
+    config_file: str,
+) -> tuple[npt.NDArray, tuple[int, int], tuple[int, int], tuple[int, int]] | None:
+    config = open_file(config_file)
+    if not config:
+        return None
+
+    keys_dict = get_keys_dict(config)
+    if not bool(keys_dict):
+        print("Invalid format")
+        return None
+
+    try:
+        keys_dict = check_data_format(keys_dict)
+    except Exception as e:
+        print(e)
+        return None
+
+    size       = keys_dict['HEIGHT'], keys_dict['WIDTH']
+    seed       = keys_dict['SEED']
+    entry      = keys_dict['ENTRY']
+    exit_coord = keys_dict['EXIT']
+
+    maze_gen = MazeGenerator(size, seed)
+    mat = maze_gen.generate(entry, exit_coord)
+    mat = maze_gen.paint_42(mat)
+    mat = np.where(mat == 15, BARRIER, MODIFIABLE)
+
+    if not check_entry_exit(keys_dict, mat):
+        print("Impossible maze parameters")
+        return None
+
+    try:
+        kruskal_mat = mazegen_perfect.fill(mat, entry, exit_coord, algorithm=keys_dict['ALGORITHM'], seed=seed)
+    except ValueError as e:
+        print(e)
+        return None
+
+    return kruskal_mat, entry, exit_coord, size
+
+
+def play_build(config_file: str, colours: MazeColours) -> None:
+    result = _setup_maze(config_file)
+    if result is None:
+        return
+    kruskal_mat, entry, exit_coord, size = result
+    animate_build(kruskal_mat, entry, exit_coord, size, colours=colours)
+
+
+def play_solve(config_file: str, colours: MazeColours) -> None:
+    result = _setup_maze(config_file)
+    if result is None:
+        return
+    kruskal_mat, entry, exit_coord, size = result
+    solution = solver(kruskal_mat.tolist(), entry, exit_coord)
+    if solution:
+        animate_solution(kruskal_mat, entry, exit_coord, size, solution, colours=colours)
+
+
+def if_main() -> None:
 
     args = sys.argv[1:]
     if len(args) != 1:
@@ -205,4 +302,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    colours = MazeColours()
+    ask_colours(colours)
+    play_build('config.txt', colours)
+    play_solve('config.txt', colours)
+    ask_colours(colours)
+    play_build('config.txt', colours)
+    play_solve('config.txt', colours)
