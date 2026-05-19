@@ -1,29 +1,45 @@
+from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 import random
 import sys
-from typing import TypeAlias
 from .high_definitions import WALL_CHARS, NORTH, SOUTH, EAST, WEST
 from .rgb_text import rgb_text
 from .maze_runner import solver
+from typing import TYPE_CHECKING, Any
 
 
-def colourise_grid(grid: list[list[str]], colours) -> list[list[str]]:
-    row_idx: int = 0
-    while row_idx < len(grid):
-        col_idx: int = 0
-        while col_idx < len(grid[row_idx]):
+if TYPE_CHECKING:
+    from .mazegen import MazeGenerator
+
+
+def colourise_grid(grid: npt.NDArray[np.str_],
+                   colours: MazeGenerator.MazeColours) -> npt.NDArray[np.str_]:
+
+    for row_idx in range(len(grid)):
+
+        for col_idx in range(len(grid[row_idx])):
             cell = grid[row_idx][col_idx]
             if cell in WALL_CHARS:
-                grid[row_idx][col_idx] = rgb_text(cell, colours.wall_r, colours.wall_g, colours.wall_b)
+                grid[row_idx][col_idx] = rgb_text(cell,
+                                                  colours.wall_r,
+                                                  colours.wall_g,
+                                                  colours.wall_b)
             elif cell == '█':
-                grid[row_idx][col_idx] = rgb_text(cell, colours.barrier_r, colours.barrier_g, colours.barrier_b)
-            col_idx += 1
-        row_idx += 1
+                grid[row_idx][col_idx] = rgb_text(cell,
+                                                  colours.barrier_r,
+                                                  colours.barrier_g,
+                                                  colours.barrier_b)
     return grid
 
-# No basta solo con mirar la diagonal, hay que mirar la izquierda y la de arriba
-def byte_intersection(cell, diagonal, left, up):
+
+"""
+To find the character to return, we have to look the cell itself,
+the diagonal up left, the cell to the left, and the cell up.
+"""
+
+
+def byte_intersection(cell: int, diagonal: int, left: int, up: int) -> int:
 
     byte = 0
 
@@ -48,7 +64,8 @@ def byte_intersection(cell, diagonal, left, up):
     return byte
 
 
-def set_cross(grid: npt.NDArray, new_grid: npt.NDArray):
+def set_cross(grid: npt.NDArray[Any],
+              new_grid: npt.NDArray[Any]) -> npt.NDArray[Any]:
 
     height, width = grid.shape
 
@@ -59,7 +76,7 @@ def set_cross(grid: npt.NDArray, new_grid: npt.NDArray):
             cell = grid[i][j]
             idx_row = i * 2 + 1
             idx_col = j * 2 + 1
-            
+
             if cell & NORTH:
                 new_grid[idx_row - 1][idx_col] = '═'
             if cell & EAST:
@@ -68,14 +85,14 @@ def set_cross(grid: npt.NDArray, new_grid: npt.NDArray):
                 new_grid[idx_row][idx_col - 1] = '║'
             if cell & SOUTH:
                 new_grid[idx_row + 1][idx_col] = '═'
-                      
+
             if cell == 255:
                 new_grid[idx_row][idx_col] = '█'
-       
+
     return new_grid
 
 
-def translate_byte(intersection) -> str:
+def translate_byte(intersection: int) -> str:
 
     dict_char = {
         0: ' ',
@@ -106,7 +123,10 @@ def translate_byte(intersection) -> str:
         return dict_char[0]
 
 
-def set_entry_exit(grid: npt.NDArray, entry, exit, size):
+def set_entry_exit(grid: npt.NDArray[Any],
+                   entry: tuple[int, int],
+                   exit: tuple[int, int],
+                   size: tuple[int, int]) -> list[list[str]]:
 
     rows = size[0] * 2 + 1
     cols = size[1] * 2 + 1
@@ -127,9 +147,9 @@ def set_entry_exit(grid: npt.NDArray, entry, exit, size):
     return new_grid
 
 
-def set_edges(grid: npt.NDArray):
+def set_edges(grid: npt.NDArray[Any]) -> npt.NDArray[np.str_]:
 
-    height, width = grid.shape  
+    height, width = grid.shape
     new_grid = np.full((2 * height + 1, 2 * width + 1), ' ', dtype=str)
     pad_grid = np.pad(grid, pad_width=1, mode='constant', constant_values=0)
 
@@ -148,11 +168,13 @@ def set_edges(grid: npt.NDArray):
             intersection = byte_intersection(cell, diagonal, left, up)
 
             new_grid[idx_row - 1][idx_col - 1] = translate_byte(intersection)
-    
+
     return new_grid
 
 
-def save_maze_to_txt(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], filename: str):
+def save_maze_to_txt(grid: npt.NDArray[Any],
+                     entry: tuple[int, int],
+                     exit_coord: tuple[int, int], filename: str) -> None:
 
     height, width = grid.shape
     content: str = ""
@@ -163,7 +185,7 @@ def save_maze_to_txt(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tupl
             cell = 'F' if grid[row][col] == 0xFF else f'{grid[row][col]:X}'
             line += cell
 
-        content += line + '\n' 
+        content += line + '\n'
 
     with open(filename, "w") as maze:
         maze.write(content)
@@ -174,22 +196,26 @@ def save_maze_to_txt(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tupl
         maze.write('\n')
         maze.write(solver(grid, entry, exit_coord))
 
-def _build_ber_grid(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], c_chance: float = 0.05,) -> list[list[str]]:
+
+def _build_ber_grid(grid: npt.NDArray[Any],
+                    entry: tuple[int, int],
+                    exit_coord: tuple[int, int],
+                    c_chance: float = 0.05,) -> list[list[str]]:
+
     rendered = set_edges(grid)
     rendered = set_cross(grid, rendered)
 
     rows, cols = rendered.shape
-    simple:          list[list[str]]      = []
-    floor_positions: list[tuple[int,int]] = []
+    simple: list[list[str]] = []
+    floor_positions: list[tuple[int, int]] = []
 
-    entry_cell = (entry[0]      * 2 + 1, entry[1]      * 2 + 1)
-    exit_cell  = (exit_coord[0] * 2 + 1, exit_coord[1] * 2 + 1)
+    entry_cell = (entry[0] * 2 + 1, entry[1] * 2 + 1)
+    exit_cell = (exit_coord[0] * 2 + 1, exit_coord[1] * 2 + 1)
 
-    row_idx: int = 0
-    while row_idx < rows:
+    for row_idx in range(rows):
         row: list[str] = []
-        col_idx: int = 0
-        while col_idx < cols:
+
+        for col_idx in range(cols):
             cell = str(rendered[row_idx][col_idx])
             if cell in WALL_CHARS or cell == '█':
                 row.append('1')
@@ -197,45 +223,41 @@ def _build_ber_grid(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple
                 row.append('0')
                 if (row_idx, col_idx) not in (entry_cell, exit_cell):
                     floor_positions.append((row_idx, col_idx))
-            col_idx += 1
         simple.append(row)
-        row_idx += 1
 
     simple[entry_cell[0]][entry_cell[1]] = 'P'
-    simple[exit_cell[0]] [exit_cell[1]]  = 'E'
+    simple[exit_cell[0]][exit_cell[1]] = 'E'
 
     c_positions: list[tuple[int, int]] = []
-    idx: int = 0
-    while idx < len(floor_positions):
+
+    for idx in range(len(floor_positions)):
         if random.random() < c_chance:
             c_positions.append(floor_positions[idx])
-        idx += 1
 
     if not c_positions:
         c_positions.append(random.choice(floor_positions))
 
-    idx = 0
-    while idx < len(c_positions):
+    for idx in range(len(c_positions)):
         row_idx, col_idx = c_positions[idx]
         simple[row_idx][col_idx] = 'C'
-        idx += 1
 
     return simple
 
 
-def save_ber(grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], filename: str, c_chance: float = 0.05,) -> None:
+def save_ber(grid: npt.NDArray[Any],
+             entry: tuple[int, int],
+             exit_coord: tuple[int, int],
+             filename: str, c_chance: float = 0.05,) -> None:
+
     simple = _build_ber_grid(grid, entry, exit_coord, c_chance)
     with open(filename, 'w') as ber_file:
-        row_idx: int = 0
-        while row_idx < len(simple):
+        for row_idx in range(len(simple)):
             ber_file.write(''.join(simple[row_idx]) + '\n')
-            row_idx += 1
 
 
-#just for testing
-def print_final_grid(grid: list[list[str]]) -> None:
+def print_final_grid(grid: npt.NDArray[Any]) -> None:
 
-    height = len(grid)#this should come from the config directly later
+    height = len(grid)
     width = len(grid[0])
 
     for row in range(height):
@@ -245,12 +267,20 @@ def print_final_grid(grid: list[list[str]]) -> None:
             line += str(cell)
         print(line)
 
-def render(anim_grid: npt.NDArray, entry: tuple[int, int], exit_coord: tuple[int, int], size: tuple[int, int], colours = None,) -> None:
+
+def render(anim_grid: npt.NDArray[np.integer],
+           entry: tuple[int, int],
+           exit_coord: tuple[int, int],
+           size: tuple[int, int],
+           colours: MazeGenerator.MazeColours) -> None:
+
     rendered = set_edges(anim_grid)
     rendered = set_cross(anim_grid, rendered)
     rendered = set_entry_exit(rendered, entry, exit_coord, size)
+
     if colours is not None:
         rendered = colourise_grid(rendered, colours)
+
     sys.stdout.write('\033[H\033[2J\033[3J')
     sys.stdout.flush()
     print_final_grid(rendered)

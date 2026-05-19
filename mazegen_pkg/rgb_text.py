@@ -1,12 +1,13 @@
 
 RESET = "\033[0m"
 
+
 def rgb_text(text: str, r: int, g: int, b: int) -> str:
     return f"\033[38;2;{r};{g};{b}m{text}{RESET}"
 
 
 def get_rgb_value(name: str) -> int:
-    while 1:
+    while True:
         pigment: str = input(f"Enter {name} value (0-255): ").strip()
         if not pigment.isdigit():
             print("Enter a valid integer.")

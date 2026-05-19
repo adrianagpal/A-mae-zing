@@ -1,31 +1,30 @@
-#!/usr/bin/env python3
-
 from typing import Any
 from .high_definitions import BARRIER
+import numpy.typing as npt
 
 
 def open_file(config_file: str) -> list[str]:
-    config: list[str] = []
+    content: list[str] = []
     try:
-        with open(config_file) as config_file:
-            config = config_file.readlines()
+        with open(config_file) as config:
+            content = config.readlines()
     except Exception as e:
         print(f"File not found: {e}")
 
-    return config
+    return content
 
 
 def check_keys(config: list[str]) -> bool:
 
     keys: list[str] = []
     allowed_keys: list[str] = [
-        'WIDTH', 
-        'HEIGHT', 
-        'ENTRY', 
-        'EXIT', 
-        'OUTPUT_FILE', 
-        'PERFECT', 
-        'SEED', 
+        'WIDTH',
+        'HEIGHT',
+        'ENTRY',
+        'EXIT',
+        'OUTPUT_FILE',
+        'PERFECT',
+        'SEED',
         'ALGORITHM'
     ]
 
@@ -34,14 +33,14 @@ def check_keys(config: list[str]) -> bool:
         if not line.startswith('#'):
             key: str = line.split('=')[0].strip()
             keys.append(key.upper())
-    
+
     return sorted(allowed_keys) == sorted(keys)
 
 
 def get_keys_dict(config: list[str]) -> dict[str, Any]:
     keys_dict: dict[str, Any] = {}
 
-    if check_keys(config):    
+    if check_keys(config):
         for item in config:
             try:
                 key, value = item.strip().split('=', 1)
@@ -59,10 +58,10 @@ def parse_coordinate(coord: str) -> tuple[int, int] | None:
 
     if len(parts) != 2:
         return None
-    
+
     if parts[0].isdigit() and parts[1].isdigit():
-        return int(parts[0]), int(parts[1]) 
-    
+        return int(parts[0]), int(parts[1])
+
     return None
 
 
@@ -80,7 +79,8 @@ def check_data_format(keys_dict: dict[str, Any]) -> dict[str, Any]:
             elif keys_dict[item].upper() == 'FALSE':
                 keys_dict[item] = False
             else:
-                raise Exception("The value of Perfect parameter is not a boolean")
+                raise Exception("The value of Perfect parameter "
+                                "is not a boolean")
 
         elif item in ('ENTRY', 'EXIT'):
             coord = parse_coordinate(keys_dict[item])
@@ -88,15 +88,15 @@ def check_data_format(keys_dict: dict[str, Any]) -> dict[str, Any]:
                 keys_dict[item] = coord
             else:
                 raise Exception("Wrong coordinates")
-            
+
         elif item == 'ALGORITHM':
             if keys_dict[item].lower() not in algo_list:
                 raise Exception("Unknown algorithm")
- 
-    return(keys_dict)
+
+    return keys_dict
 
 
-def check_entry_exit(keys_dict, mat) -> bool:
+def check_entry_exit(keys_dict: dict[str, Any], mat: npt.NDArray[Any]) -> bool:
     entry = keys_dict['ENTRY']
     exit_coord = keys_dict['EXIT']
     width = keys_dict['WIDTH']
@@ -104,7 +104,7 @@ def check_entry_exit(keys_dict, mat) -> bool:
 
     if entry == exit_coord:
         return False
-    
+
     if (
         entry[0] >= height or
         exit_coord[0] >= height or
@@ -112,7 +112,7 @@ def check_entry_exit(keys_dict, mat) -> bool:
         exit_coord[1] >= width
     ):
         return False
-    
+
     if (
         mat[entry[0]][entry[1]] == BARRIER or
         mat[exit_coord[0]][exit_coord[1]] == BARRIER

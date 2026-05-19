@@ -20,7 +20,7 @@ def open_wall(grid: npt.NDArray[np.integer], row1: int, col1: int,
 
 def solver(grid: npt.NDArray[Any],
            entry: tuple[int, int],
-           exit_coord: tuple[int, int],) -> str | None:
+           exit_coord: tuple[int, int],) -> str:
 
     start_row, start_col = entry
     end_row, end_col = exit_coord
@@ -29,7 +29,7 @@ def solver(grid: npt.NDArray[Any],
         not in_bounds(grid, start_row, start_col) or
         not in_bounds(grid, end_row, end_col)
     ):
-        return None
+        return ""
 
     prev: dict[tuple[int, int], tuple[int, int] | None] = {entry: None}
     queue: list[tuple[int, int]] = [entry]
@@ -67,7 +67,7 @@ def solver(grid: npt.NDArray[Any],
                     prev[(next_row, next_col)] = (row, col)
                     queue.append((next_row, next_col))
 
-    return None
+    return ""
 
 
 def open_loop(

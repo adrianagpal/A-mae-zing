@@ -48,8 +48,8 @@ def animate_build(grid: npt.NDArray[Any],
                   entry: tuple[int, int],
                   exit_coord: tuple[int, int],
                   size: tuple[int, int],
-                  delay: float = 0.05,
-                  colours: MazeGenerator.MazeColours | None = None) -> None:
+                  colours: MazeGenerator.MazeColours,
+                  delay: float = 0.05) -> None:
 
     height, width = grid.shape
     anim_grid = np.full((height, width), MODIFIABLE, dtype=int)

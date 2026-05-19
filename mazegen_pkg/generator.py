@@ -128,7 +128,9 @@ Prim's algorithm
 """
 
 
-def prim(grid: npt.NDArray[Any], start_r: int, start_c: int) -> npt.NDArray[Any]:
+def prim(grid: npt.NDArray[Any],
+         start_r: int, start_c: int) -> npt.NDArray[Any]:
+
     frontier: list[tuple[int, int, int, int, int]] = []
 
     def push_frontiers(r: int, c: int) -> None:
@@ -154,7 +156,9 @@ def prim(grid: npt.NDArray[Any], start_r: int, start_c: int) -> npt.NDArray[Any]
     return grid
 
 
-def seal_isolated_pockets(grid: npt.NDArray[Any], entry: tuple[int, int],) -> None:
+def seal_isolated_pockets(grid: npt.NDArray[Any],
+                          entry: tuple[int, int],) -> None:
+
     reachable: set[tuple[int, int]] = {entry}
     queue: list[tuple[int, int]] = [entry]
     qi = 0
@@ -162,7 +166,7 @@ def seal_isolated_pockets(grid: npt.NDArray[Any], entry: tuple[int, int],) -> No
     while qi < len(queue):
         r, c = queue[qi]
         qi += 1
-        
+
         for i in range(len(DIRECTIONS)):
             d = DIRECTIONS[i]
             dr, dc = DIR_DELTA[d]
@@ -174,7 +178,6 @@ def seal_isolated_pockets(grid: npt.NDArray[Any], entry: tuple[int, int],) -> No
             ):
                 reachable.add((nr, nc))
                 queue.append((nr, nc))
-
 
     for r in range(len(grid)):
 

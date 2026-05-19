@@ -45,15 +45,15 @@ class MazeGenerator():
             print(e)
 
         if not self.perfect:
-            maze = make_imperfect(maze, self.entry, self.exit_coord)
+            make_imperfect(maze, self.entry, self.exit_coord)
 
         return maze
 
     def generate_base(self) -> npt.NDArray[Any]:
         np.random.seed(self.seed)
-        mat = np.zeros(self.size, dtype=int)
-        self.paint_42(mat)
-        mat = np.where(mat == 15, BARRIER, MODIFIABLE)
+        zeros_mat = np.zeros(self.size, dtype=int)
+        self.paint_42(zeros_mat)
+        mat = np.where(zeros_mat == 15, BARRIER, MODIFIABLE)
 
         return mat
 
@@ -110,19 +110,21 @@ class MazeGenerator():
 
         return mat
 
-    def maze_renderer(self, maze: npt.NDArray[Any], colours: MazeColours) -> None:
+    def maze_renderer(self,
+                      maze: npt.NDArray[Any], colours: MazeColours) -> None:
         render(maze, self.entry, self.exit_coord, self.size, colours)
 
-    def maze_animate(self, maze: npt.NDArray[Any], colours: MazeColours) -> None:
+    def maze_animate(self,
+                     maze: npt.NDArray[Any], colours: MazeColours) -> None:
         animate_build(
-            maze, self.entry, self.exit_coord, self.size, 0.02, colours)
+            maze, self.entry, self.exit_coord, self.size, colours, 0.02)
 
     def maze_solve(self, maze: npt.NDArray[Any], colours: MazeColours) -> None:
         solution = solver(maze, self.entry, self.exit_coord)
         animate_solution(
             maze,
             self.entry, self.exit_coord, self.size,
-            solution, 0.02, colours)
+            solution, colours, 0.02)
 
     class MazeColours:
         def __init__(self,
