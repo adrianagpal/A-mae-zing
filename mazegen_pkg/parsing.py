@@ -96,7 +96,7 @@ def check_data_format(keys_dict: dict[str, Any]) -> dict[str, Any]:
     return(keys_dict)
 
 
-def check_entry_exit(keys_dict, mat):
+def check_entry_exit(keys_dict, mat) -> bool:
     entry = keys_dict['ENTRY']
     exit_coord = keys_dict['EXIT']
     width = keys_dict['WIDTH']

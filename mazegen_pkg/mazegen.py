@@ -1,6 +1,10 @@
-import numpy as np
+from __future__ import annotations
 import sys
-from .parsing import open_file, get_keys_dict, check_data_format, check_entry_exit
+import numpy as np
+import numpy.typing as npt
+from typing import Any
+from .parsing import open_file, get_keys_dict
+from .parsing import check_data_format, check_entry_exit
 from .generator import fill
 from .rgb_text import get_rgb_value
 from .maze_runner import make_imperfect, solver
@@ -10,12 +14,13 @@ from .animations import animate_build, animate_solution
 
 
 class MazeGenerator():
-    def __init__(self):
+    def __init__(self) -> None:
 
         keys_dict = self.check_parameters()
 
         if bool(keys_dict):
-            self.size: tuple[int, int] = keys_dict['HEIGHT'], keys_dict['WIDTH']
+            self.size: tuple[int,
+                             int] = keys_dict['HEIGHT'], keys_dict['WIDTH']
             self.seed: int = keys_dict['SEED']
             self.entry: tuple[int, int] = keys_dict['ENTRY']
             self.exit_coord: tuple[int, int] = keys_dict['EXIT']
@@ -23,8 +28,8 @@ class MazeGenerator():
             self.perfect: bool = keys_dict['PERFECT']
             self.output: str = keys_dict['OUTPUT_FILE']
             self.colours = self.MazeColours
-    
-    def generate_maze(self):
+
+    def generate_maze(self) -> npt.NDArray[Any]:
 
         keys_dict = self.check_parameters()
 
@@ -38,33 +43,33 @@ class MazeGenerator():
             maze = fill(base, self.entry, algorithm=self.algo, seed=self.seed)
         except ValueError as e:
             print(e)
-            
+
         if not self.perfect:
             maze = make_imperfect(maze, self.entry, self.exit_coord)
 
         return maze
 
-    def generate_base(self):
+    def generate_base(self) -> npt.NDArray[Any]:
         np.random.seed(self.seed)
         mat = np.zeros(self.size, dtype=int)
         self.paint_42(mat)
         mat = np.where(mat == 15, BARRIER, MODIFIABLE)
 
         return mat
-  
-    def check_parameters(self):
+
+    def check_parameters(self) -> dict[str, Any]:
         args = sys.argv[1:]
-        
+
         if len(args) != 1:
             print("Incorrect number of arguments provided")
             exit()
 
         config_file = sys.argv[1]
-        config = open_file(config_file) 
+        config = open_file(config_file)
 
         if not config:
             exit()
-            
+
         keys_dict = get_keys_dict(config)
 
         if not bool(keys_dict):
@@ -75,54 +80,60 @@ class MazeGenerator():
         except Exception as e:
             print(e)
             exit()
-        
+
         return keys_dict
 
-    
-    def paint_42(self, mat):
+    def paint_42(self, mat: npt.NDArray[Any]) -> npt.NDArray[Any]:
 
         if self.size[0] > 5 and self.size[1] > 7:
 
-            n_blocks = max(min(int(self.size[0]/(3 * 2)), 
-                            int(self.size[1]/(3 * 2))), 3)
+            n_blocks = max(min(int(self.size[0]/(3 * 2)),
+                               int(self.size[1]/(3 * 2))), 3)
             space = 1
             n_width = n_blocks * 2 + space
             n_height = n_width - 2
 
             x = int(self.size[1]/2 - n_height/2) - 1
             y = int(self.size[0]/2 - n_width/2) + 1
-            
+
             for i in range(0, n_blocks):
                 mat[y + i][x] = 15
                 mat[y + n_blocks - 1][x + i] = 15
                 mat[y + n_blocks + i - 1][x + n_blocks - 1] = 15
-            
+
             for j in range(0, n_blocks):
                 mat[y][x + n_blocks + j + space] = 15
                 mat[y + j][x + 2 * n_blocks + space - 1] = 15
                 mat[y + n_blocks - 1][x + n_blocks + space + j] = 15
                 mat[y + n_blocks + j - 1][x + n_blocks + space] = 15
-                mat[y + 2 * n_blocks - 2][x + n_blocks + space + j] = 15       
+                mat[y + 2 * n_blocks - 2][x + n_blocks + space + j] = 15
 
         return mat
-    
-    def maze_renderer(self, maze, colours):
+
+    def maze_renderer(self, maze: npt.NDArray[Any], colours: MazeColours) -> None:
         render(maze, self.entry, self.exit_coord, self.size, colours)
 
-    def maze_animate(self, maze, colours):
-        animate_build(maze, self.entry, self.exit_coord, self.size, 0.02, colours)
+    def maze_animate(self, maze: npt.NDArray[Any], colours: MazeColours) -> None:
+        animate_build(
+            maze, self.entry, self.exit_coord, self.size, 0.02, colours)
 
-    def maze_solve(self, maze, colours):
+    def maze_solve(self, maze: npt.NDArray[Any], colours: MazeColours) -> None:
         solution = solver(maze, self.entry, self.exit_coord)
-        animate_solution(maze, self.entry, self.exit_coord, self.size, solution, 0.02, colours)
+        animate_solution(
+            maze,
+            self.entry, self.exit_coord, self.size,
+            solution, 0.02, colours)
 
- 
     class MazeColours:
-        def __init__(self, wall_r: int = 255, wall_g: int = 255, wall_b: int = 255,
-                     barrier_r: int = 128, barrier_g: int = 128, barrier_b: int = 128,) -> None:
-            self.wall_r    = wall_r
-            self.wall_g    = wall_g
-            self.wall_b    = wall_b
+        def __init__(self,
+                     wall_r: int = 255, wall_g: int = 255, wall_b: int = 255,
+                     barrier_r: int = 128,
+                     barrier_g: int = 128,
+                     barrier_b: int = 128,) -> None:
+
+            self.wall_r = wall_r
+            self.wall_g = wall_g
+            self.wall_b = wall_b
             self.barrier_r = barrier_r
             self.barrier_g = barrier_g
             self.barrier_b = barrier_b
