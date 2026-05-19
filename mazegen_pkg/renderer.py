@@ -195,6 +195,7 @@ def save_maze_to_txt(grid: npt.NDArray[Any],
         maze.write(",".join([str(exit_coord[0]), str(exit_coord[1])]))
         maze.write('\n')
         maze.write(solver(grid, entry, exit_coord))
+        maze.write('\n')
 
 
 def _build_ber_grid(grid: npt.NDArray[Any],

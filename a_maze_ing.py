@@ -18,9 +18,10 @@ def print_grid(grid: list[list[int]], label: str = '') -> None:
 
 def check_file_name(file_name: str) -> str:
 
+    message = "Output file name is invalid"
     parts = file_name.split('.')
     if len(parts) != 2:
-        return "INVALID!"
+        return message
 
     for letter in file_name:
         if (
@@ -28,14 +29,14 @@ def check_file_name(file_name: str) -> str:
             not letter == '.' and
             not letter == '_'
         ):
-            return "INVALID!"
+            return message
 
     if file_name.endswith(".ber"):
         return "ber"
     elif file_name.endswith(".txt"):
         return "txt"
     else:
-        return "GOOD TRY, BUT STILL INVALID!"
+        return message
 
 
 def main() -> None:
@@ -49,12 +50,15 @@ def main() -> None:
     while True:
 
         try:
+            print("=== A-Maze-ing ===")
             option = int(input("Select option: \n"
                                "1: Toggle Solution\n"
                                "2: Choose Colours\n"
                                "3: Regenerate Maze\n"
                                "4: Change Seed Manually\n"
-                               "5: Save \n6: Exit\n"))
+                               "5: Save \n"
+                               "6: Exit\n"
+                               "Choice? (1-6): "))
 
             if option == 1 and not solv_bool:
                 maze_gen.maze_solve(maze, colours)

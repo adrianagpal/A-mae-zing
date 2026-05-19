@@ -1,6 +1,6 @@
 from __future__ import annotations
 from .high_definitions import MODIFIABLE, BARRIER
-from .high_definitions import CHAR_DELTA, SOLUTION_COLOUR, WALL_BITS
+from .high_definitions import CHAR_DELTA, SOLUTION_COLOUR, DIRECTIONS
 from .renderer import render, set_cross, set_edges, set_entry_exit
 from .renderer import colourise_grid, print_final_grid
 import sys
@@ -71,7 +71,7 @@ def animate_build(grid: npt.NDArray[Any],
             if target != BARRIER:
                 current = anim_grid[row][col]
 
-                for wall_bit in WALL_BITS:
+                for wall_bit in DIRECTIONS:
                     if not (target & wall_bit) and (current & wall_bit):
                         anim_grid[row][col] &= ~wall_bit
                         render(anim_grid, entry, exit_coord, size, colours)

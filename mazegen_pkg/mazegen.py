@@ -73,7 +73,7 @@ class MazeGenerator():
         keys_dict = get_keys_dict(config)
 
         if not bool(keys_dict):
-            print("Invalid format")
+            print("Missing or invalid parameters in config file")
             exit()
         try:
             keys_dict = check_data_format(keys_dict)
@@ -107,6 +107,9 @@ class MazeGenerator():
                 mat[y + n_blocks - 1][x + n_blocks + space + j] = 15
                 mat[y + n_blocks + j - 1][x + n_blocks + space] = 15
                 mat[y + 2 * n_blocks - 2][x + n_blocks + space + j] = 15
+        
+        else:
+            print("42 pattern has been omitted")
 
         return mat
 
