@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "mazegen"
+version = "1.0.0"
+description = "Package for creating, rendering and animating a maze"
+authors = [
+    "adrianagpal <adrianag@student.42malaga.com>", 
+    "apalese- <apalese-@student.42malaga.com>"
+]
+readme = "README.md"
+package-mode = true
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+numpy = "*"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "*"
+mypy = "*"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

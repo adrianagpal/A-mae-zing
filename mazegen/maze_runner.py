@@ -1,7 +1,6 @@
-from .generator import in_bounds
+from .algorithm import in_bounds
 from .high_definitions import OPPOSITE, DIR_DELTA, DIR_CHAR, DIRECTIONS
 import numpy.typing as npt
-from typing import Any
 import numpy as np
 
 
@@ -18,7 +17,7 @@ def open_wall(grid: npt.NDArray[np.integer], row1: int, col1: int,
     grid[row2][col2] &= ~OPPOSITE[direction]
 
 
-def solver(grid: npt.NDArray[Any],
+def solver(grid: npt.NDArray[np.uint8],
            entry: tuple[int, int],
            exit_coord: tuple[int, int],) -> str:
 
@@ -71,11 +70,14 @@ def solver(grid: npt.NDArray[Any],
 
 
 def open_loop(
-        grid: npt.NDArray[Any],
+        grid: npt.NDArray[np.uint8],
         entry: tuple[int, int],
         exit_coord: tuple[int, int]
         ) -> tuple[tuple[int, int], tuple[int, int]] | None:
-
+    """
+    Connects entry with exit exploring from both sides simultaneously,
+    and when it finds a barrier between them, it opends it and ends.
+    """
     dist_entry: dict[tuple[int, int], int] = {entry: 0}
     dist_exit: dict[tuple[int, int], int] = {exit_coord: 0}
     queue_entry: list[tuple[int, int]] = [entry]
@@ -85,8 +87,7 @@ def open_loop(
         if queue_entry:
             row, col = queue_entry.pop(0)
 
-            for i in range(len(DIRECTIONS)):
-                wall_dir: int = DIRECTIONS[i]
+            for wall_dir in DIRECTIONS:
                 delta_row, delta_col = DIR_DELTA[wall_dir]
                 next_row, next_col = row + delta_row, col + delta_col
 
@@ -104,8 +105,7 @@ def open_loop(
         if queue_exit:
             row, col = queue_exit.pop(0)
 
-            for i in range(len(DIRECTIONS)):
-                wall_dir = DIRECTIONS[i]
+            for wall_dir in DIRECTIONS:
                 delta_row, delta_col = DIR_DELTA[wall_dir]
                 next_row, next_col = row + delta_row, col + delta_col
                 if in_bounds(grid, next_row, next_col):
@@ -122,7 +122,7 @@ def open_loop(
     return None
 
 
-def make_imperfect(grid: npt.NDArray[Any],
+def make_imperfect(grid: npt.NDArray[np.uint8],
                    entry: tuple[int, int],
                    exit_coord: tuple[int, int],) -> str:
 

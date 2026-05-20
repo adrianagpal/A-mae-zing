@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 
 if TYPE_CHECKING:
-    from .mazegen import MazeGenerator
+    from .generator import MazeGenerator
 
 
 def colourise_grid(grid: npt.NDArray[np.str_],

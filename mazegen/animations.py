@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 
 if TYPE_CHECKING:
-    from .mazegen import MazeGenerator
+    from .generator import MazeGenerator
 
 
 def animate_solution(grid: npt.NDArray[Any],

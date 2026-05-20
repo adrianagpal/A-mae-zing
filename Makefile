@@ -1,8 +1,10 @@
+PROJECT = project
+
 run:
 	python3 a_maze_ing.py config.txt
 
-install: requirements.txt
-	pip install -r requirements.txt
+install:
+	cd $(PROJECT) && poetry install
 
 clean:
 	rm -rf */__pycache__

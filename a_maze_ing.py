@@ -1,4 +1,4 @@
-from mazegen_pkg import MazeGenerator, save_maze_to_txt, save_ber
+from mazegen import MazeGenerator, save_maze_to_txt, save_ber
 
 
 def print_grid(grid: list[list[int]], label: str = '') -> None:

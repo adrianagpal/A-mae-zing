@@ -5,7 +5,7 @@ import numpy.typing as npt
 from typing import Any
 from .parsing import open_file, get_keys_dict
 from .parsing import check_data_format, check_entry_exit
-from .generator import fill
+from .algorithm import fill
 from .rgb_text import get_rgb_value
 from .maze_runner import make_imperfect, solver
 from .high_definitions import MODIFIABLE, BARRIER
@@ -29,7 +29,15 @@ class MazeGenerator():
             self.output: str = keys_dict['OUTPUT_FILE']
             self.colours = self.MazeColours
 
-    def generate_maze(self) -> npt.NDArray[Any]:
+    def generate_base(self) -> npt.NDArray[np.uint8]:
+        np.random.seed(self.seed)
+        zeros_mat = np.zeros(self.size, dtype=int)
+        self.paint_42(zeros_mat)
+        mat = np.where(zeros_mat == 15, BARRIER, MODIFIABLE)
+
+        return mat
+
+    def generate_maze(self) -> npt.NDArray[np.uint8]:
 
         keys_dict = self.check_parameters()
 
@@ -49,14 +57,6 @@ class MazeGenerator():
 
         return maze
 
-    def generate_base(self) -> npt.NDArray[Any]:
-        np.random.seed(self.seed)
-        zeros_mat = np.zeros(self.size, dtype=int)
-        self.paint_42(zeros_mat)
-        mat = np.where(zeros_mat == 15, BARRIER, MODIFIABLE)
-
-        return mat
-
     def check_parameters(self) -> dict[str, Any]:
         args = sys.argv[1:]
 
@@ -68,6 +68,7 @@ class MazeGenerator():
         config = open_file(config_file)
 
         if not config:
+            print("Config file is empty")
             exit()
 
         keys_dict = get_keys_dict(config)
@@ -83,7 +84,7 @@ class MazeGenerator():
 
         return keys_dict
 
-    def paint_42(self, mat: npt.NDArray[Any]) -> npt.NDArray[Any]:
+    def paint_42(self, mat: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
 
         if self.size[0] > 5 and self.size[1] > 7:
 
