@@ -135,8 +135,8 @@ def seal_isolated_pockets(grid: npt.NDArray[np.uint8],
                           entry: tuple[int, int],) -> None:
     """
     Implements a BFS (Breadth-First Search), a flood-fill-like algorithm.
-    Starting from the given entry coordinates, it explores all reachable 
-    cells. Any cell that is not reachable from the entry is treated as 
+    Starting from the given entry coordinates, it explores all reachable
+    cells. Any cell that is not reachable from the entry is treated as
     isolated and is converted into a barrier.
     """
     reachable: set[tuple[int, int]] = {entry}

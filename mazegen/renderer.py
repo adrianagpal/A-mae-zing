@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from .generator import MazeGenerator
 
 
-def colourise_grid(grid: npt.NDArray[np.str_],
-                   colours: MazeGenerator.MazeColours) -> npt.NDArray[np.str_]:
+def colourise_grid(grid: list[list[str]],
+                   colours: MazeGenerator.MazeColours) -> list[list[str]]:
 
     for row_idx in range(len(grid)):
 
@@ -64,8 +64,8 @@ def byte_intersection(cell: int, diagonal: int, left: int, up: int) -> int:
     return byte
 
 
-def set_cross(grid: npt.NDArray[Any],
-              new_grid: npt.NDArray[Any]) -> npt.NDArray[Any]:
+def set_cross(grid: npt.NDArray[np.uint8],
+              new_grid: npt.NDArray[np.str_]) -> npt.NDArray[np.str_]:
 
     height, width = grid.shape
 
@@ -123,7 +123,7 @@ def translate_byte(intersection: int) -> str:
         return dict_char[0]
 
 
-def set_entry_exit(grid: npt.NDArray[Any],
+def set_entry_exit(grid: npt.NDArray[np.str_],
                    entry: tuple[int, int],
                    exit: tuple[int, int],
                    size: tuple[int, int]) -> list[list[str]]:
@@ -147,7 +147,7 @@ def set_entry_exit(grid: npt.NDArray[Any],
     return new_grid
 
 
-def set_edges(grid: npt.NDArray[Any]) -> npt.NDArray[np.str_]:
+def set_edges(grid: npt.NDArray[np.uint8]) -> npt.NDArray[np.str_]:
 
     height, width = grid.shape
     new_grid = np.full((2 * height + 1, 2 * width + 1), ' ', dtype=str)
@@ -256,7 +256,7 @@ def save_ber(grid: npt.NDArray[Any],
             ber_file.write(''.join(simple[row_idx]) + '\n')
 
 
-def print_final_grid(grid: npt.NDArray[Any]) -> None:
+def print_final_grid(grid: list[list[str]]) -> None:
 
     height = len(grid)
     width = len(grid[0])
@@ -269,7 +269,7 @@ def print_final_grid(grid: npt.NDArray[Any]) -> None:
         print(line)
 
 
-def render(anim_grid: npt.NDArray[np.integer],
+def render(anim_grid: npt.NDArray[np.uint8],
            entry: tuple[int, int],
            exit_coord: tuple[int, int],
            size: tuple[int, int],
@@ -277,11 +277,11 @@ def render(anim_grid: npt.NDArray[np.integer],
 
     rendered = set_edges(anim_grid)
     rendered = set_cross(anim_grid, rendered)
-    rendered = set_entry_exit(rendered, entry, exit_coord, size)
+    rendered_list = set_entry_exit(rendered, entry, exit_coord, size)
 
     if colours is not None:
-        rendered = colourise_grid(rendered, colours)
+        rendered_list = colourise_grid(rendered_list, colours)
 
     sys.stdout.write('\033[H\033[2J\033[3J')
     sys.stdout.flush()
-    print_final_grid(rendered)
+    print_final_grid(rendered_list)

@@ -108,22 +108,23 @@ class MazeGenerator():
                 mat[y + n_blocks - 1][x + n_blocks + space + j] = 15
                 mat[y + n_blocks + j - 1][x + n_blocks + space] = 15
                 mat[y + 2 * n_blocks - 2][x + n_blocks + space + j] = 15
-        
+
         else:
             print("42 pattern has been omitted")
 
         return mat
 
-    def maze_renderer(self,
-                      maze: npt.NDArray[Any], colours: MazeColours) -> None:
+    def maze_renderer(self, maze: npt.NDArray[np.uint8],
+                      colours: MazeColours) -> None:
         render(maze, self.entry, self.exit_coord, self.size, colours)
 
-    def maze_animate(self,
-                     maze: npt.NDArray[Any], colours: MazeColours) -> None:
+    def maze_animate(self, maze: npt.NDArray[np.uint8],
+                     colours: MazeColours) -> None:
         animate_build(
             maze, self.entry, self.exit_coord, self.size, colours, 0.02)
 
-    def maze_solve(self, maze: npt.NDArray[Any], colours: MazeColours) -> None:
+    def maze_solve(self, maze: npt.NDArray[np.uint8],
+                   colours: MazeColours) -> None:
         solution = solver(maze, self.entry, self.exit_coord)
         animate_solution(
             maze,

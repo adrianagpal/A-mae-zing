@@ -4,13 +4,13 @@ import numpy.typing as npt
 import numpy as np
 
 
-def has_passage(grid: npt.NDArray[np.integer],
+def has_passage(grid: npt.NDArray[np.uint8],
                 row: int, col: int, direction: int) -> bool:
 
     return (int(grid[row][col]) & direction) == 0
 
 
-def open_wall(grid: npt.NDArray[np.integer], row1: int, col1: int,
+def open_wall(grid: npt.NDArray[np.uint8], row1: int, col1: int,
               row2: int, col2: int, direction: int) -> None:
 
     grid[row1][col1] &= ~direction

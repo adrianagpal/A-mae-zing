@@ -7,14 +7,14 @@ import sys
 import time
 import numpy.typing as npt
 import numpy as np
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
     from .generator import MazeGenerator
 
 
-def animate_solution(grid: npt.NDArray[Any],
+def animate_solution(grid: npt.NDArray[np.uint8],
                      entry: tuple[int, int],
                      exit_coord: tuple[int, int],
                      size: tuple[int, int],
@@ -24,10 +24,10 @@ def animate_solution(grid: npt.NDArray[Any],
 
     rendered = set_edges(grid)
     rendered = set_cross(grid, rendered)
-    rendered = set_entry_exit(rendered, entry, exit_coord, size)
+    rendered_list = set_entry_exit(rendered, entry, exit_coord, size)
 
     if colours is not None:
-        rendered = colourise_grid(rendered, colours)
+        rendered_list = colourise_grid(rendered_list, colours)
     row, col = entry
 
     for idx in range(len(solution)):
@@ -36,15 +36,15 @@ def animate_solution(grid: npt.NDArray[Any],
         col += delta_col
 
         if (row, col) != exit_coord:
-            rendered[row * 2 + 1][col * 2 + 1] = SOLUTION_COLOUR
+            rendered_list[row * 2 + 1][col * 2 + 1] = SOLUTION_COLOUR
 
         sys.stdout.write('\033[H\033[2J\033[3J')
         sys.stdout.flush()
-        print_final_grid(rendered)
+        print_final_grid(rendered_list)
         time.sleep(delay)
 
 
-def animate_build(grid: npt.NDArray[Any],
+def animate_build(grid: npt.NDArray[np.uint8],
                   entry: tuple[int, int],
                   exit_coord: tuple[int, int],
                   size: tuple[int, int],
