@@ -1,22 +1,27 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools>=64.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "mazegen"
 version = "1.0.0"
 description = "Package for creating, rendering and animating a maze"
 authors = [
-    "adrianagpal <adrianag@student.42malaga.com>", 
-    "apalese- <apalese-@student.42malaga.com>"
+    { name = "adrianag", email = "adrianag@student.42malaga.com" },
+    { name = "apalese-", email = "apalese-@student.42malaga.com" }
 ]
 readme = "README.md"
-package-mode = true
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10"
-numpy = "*"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mazegen*"]
 
-[tool.poetry.group.dev.dependencies]
-flake8 = "*"
-mypy = "*"
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "flake8",
+    "mypy",
+]
