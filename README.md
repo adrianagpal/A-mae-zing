@@ -99,6 +99,7 @@ ALGORITHM=     currently only "Kruskal" and "Prim" are supported
 
 - https://weblog.jamisbuck.org/2011/1/3/maze-generation-kruskal-s-algorithm
 - https://weblog.jamisbuck.org/2011/1/10/maze-generation-prim-s-algorithm
+- And more!
 
 ---
 
@@ -114,4 +115,5 @@ ALGORITHM=     currently only "Kruskal" and "Prim" are supported
 ## Apalese
 
 - Algorithm Implementations
+- Colouring in Terminal
 - Animations

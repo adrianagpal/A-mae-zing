@@ -95,7 +95,10 @@ class MazeGenerator():
             n_height = n_width - 2
 
             x = int(self.size[1]/2 - n_height/2) - 1
-            y = int(self.size[0]/2 - n_width/2) + 1
+            if (self.size[0] <= 6 and self.size[1] <= 8):
+                y = int(self.size[0]/2 - n_width/2)
+            else:
+                y = int(self.size[0]/2 - n_width/2) + 1
 
             for i in range(0, n_blocks):
                 mat[y + i][x] = 15
@@ -108,9 +111,6 @@ class MazeGenerator():
                 mat[y + n_blocks - 1][x + n_blocks + space + j] = 15
                 mat[y + n_blocks + j - 1][x + n_blocks + space] = 15
                 mat[y + 2 * n_blocks - 2][x + n_blocks + space + j] = 15
-
-        else:
-            print("42 pattern has been omitted")
 
         return mat
 

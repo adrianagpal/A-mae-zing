@@ -50,6 +50,9 @@ def main() -> None:
     while True:
 
         try:
+            if not maze_gen.size[0] > 5 or not maze_gen.size[1] > 7:
+                print("42 pattern has been omitted")
+
             print("=== A-Maze-ing ===")
             option = int(input("Select option: \n"
                                "1: Toggle Solution\n"
