@@ -1,5 +1,3 @@
-PROJECT = project
-
 run:
 	python3 a_maze_ing.py config.txt
 
@@ -18,14 +16,9 @@ clean:
 	rm -rf */__pycache__
 	rm -rf __pycache__/
 	rm -rf .mypy_cache
+	rm -rf dist/
 	rm -rf *.egg-info
-	rm -rf build/
 
-pack
-	pip install --upgrade pip setuptools wheel build
-	pip install -e .
-	python3 -m build --wheel
-	
 debug:
 	python3 -m pdb a_maze_ing.py config.txt
 
